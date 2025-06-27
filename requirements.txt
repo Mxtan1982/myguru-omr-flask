@@ -1,0 +1,8 @@
+flask 
+flask-cors 
+pandas 
+python-docx 
+PyMuPDF 
+pytesseract 
+opencv-python 
+numpy 
