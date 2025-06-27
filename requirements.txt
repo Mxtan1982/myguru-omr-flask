@@ -6,3 +6,4 @@ PyMuPDF
 pytesseract 
 opencv-python 
 numpy 
+gunicorn
