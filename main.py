@@ -15,6 +15,7 @@ UPLOAD_FOLDER = "/tmp"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 results_cache = []
 
+# 允许上传的文件类型
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg', 'png'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -34,6 +35,7 @@ def grade():
     if not allowed_file(skema_file.filename) or not allowed_file(student_file.filename):
         return jsonify({"error": "上传的文件类型不被允许"}), 400
 
+    # 保存到临时目录
     with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(skema_file.filename)) as skema_temp:
         skema_file.save(skema_temp.name)
         skema_path = skema_temp.name
@@ -81,7 +83,7 @@ def export_excel():
     df.to_excel(file_path, index=False)
     return send_file(file_path, as_attachment=True)
 
-# ✅ 重点是这个 PORT 写法
+# ✅ 兼容 Render 自动分配端口
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
