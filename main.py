@@ -34,10 +34,17 @@ def grade():
     if not allowed_file(skema_file.filename) or not allowed_file(student_file.filename):
         return jsonify({"error": "上传的文件类型不被允许"}), 400
 
-    skema_path = os.path.join(UPLOAD_FOLDER, secure_filename(skema_file.filename))
-    student_path = os.path.join(UPLOAD_FOLDER, secure_filename(student_file.filename))
-    skema_file.save(skema_path)
-    student_file.save(student_path)
+  import tempfile
+
+# 保存 skema 到临时文件
+with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(skema_file.filename)) as skema_temp:
+    skema_file.save(skema_temp.name)
+    skema_path = skema_temp.name
+
+# 保存 student 到临时文件
+with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(student_file.filename)) as student_temp:
+    student_file.save(student_temp.name)
+    student_path = student_temp.name
 
     skema_answers = extract_skema(skema_path)
     total_questions = len(skema_answers)
