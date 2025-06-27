@@ -6,15 +6,16 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from utils import extract_student_name, extract_student_answers
 from skema_parser import extract_skema
-import tempfile  # ✅ 正确缩进
+import tempfile
 
 app = Flask(__name__)
 CORS(app)
 
-UPLOAD_FOLDER = '/tmp'
+UPLOAD_FOLDER = '/tmp'  # ✅ Render 可写入目录
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 results_cache = []
 
+# 允许上传的文件类型
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg', 'png'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -44,7 +45,7 @@ def grade():
         student_file.save(student_temp.name)
         student_path = student_temp.name
 
-    # 读取并比较答案
+    # 处理评分
     skema_answers = extract_skema(skema_path)
     total_questions = len(skema_answers)
     if total_questions == 0:
@@ -80,7 +81,7 @@ def export_excel():
 
     df = pd.DataFrame(results_cache)
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_path = f"/tmp/成绩表_{now}.xlsx"
+    file_path = f"/tmp/成绩表_{now}.xlsx"  # ✅ 修复点
     df.to_excel(file_path, index=False)
     return send_file(file_path, as_attachment=True)
 
