@@ -6,6 +6,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from utils import extract_student_name, extract_student_answers
 from skema_parser import extract_skema
+import tempfile  # ✅ 正确缩进，没有多余的空格或 tab
 
 app = Flask(__name__)
 CORS(app)
