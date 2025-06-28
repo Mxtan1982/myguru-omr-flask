@@ -4,7 +4,7 @@ import os
 import re
 import random
 
-# 多模板坐标（含 STPM、华小、SK、SM、SMK、SPM、UPSR、UASA、PT3、SEKOLAH_SENI、SEKOLAH_SUKAN、VOKASIONAL）
+# 各学校/考试类型模板坐标（示例，可根据实际答题卡微调）
 TEMPLATES = {
     "SJKC": {"x": 50, "y": 50, "w": 400, "h": 100},
     "SK": {"x": 70, "y": 50, "w": 400, "h": 90},
@@ -22,28 +22,33 @@ TEMPLATES = {
 
 def extract_student_name(image_path, template_name=None):
     """
-    优先使用模板区域 OCR 提取名字，如果失败则使用文件名推测
+    优先根据模板 OCR 提取名字，失败则 fallback 用文件名推测
     """
     text = ""
 
     if template_name and template_name in TEMPLATES:
         img = cv2.imread(image_path)
+        if img is None:
+            print(f"⚠️ 无法读取图像: {image_path}")
+            return fallback_name_from_filename(image_path)
+
         coords = TEMPLATES[template_name]
         x, y, w, h = coords["x"], coords["y"], coords["w"], coords["h"]
         name_region = img[y:y + h, x:x + w]
 
         gray = cv2.cvtColor(name_region, cv2.COLOR_BGR2GRAY)
         text = pytesseract.image_to_string(gray, lang="eng").strip()
+        print(f"🔍 OCR结果（{template_name}）: '{text}'")
 
-    # 如果 OCR 失败或没有模板，就 fallback
     if not text or len(text) < 2:
         text = fallback_name_from_filename(image_path)
+        print(f"✅ fallback 名字: {text}")
 
     return text
 
 def fallback_name_from_filename(image_path):
     """
-    使用文件名生成学生名
+    fallback 用文件名生成名字
     """
     filename = os.path.splitext(os.path.basename(image_path))[0]
 
@@ -52,26 +57,18 @@ def fallback_name_from_filename(image_path):
         if time_match:
             time_str = time_match.group(1).replace('.', '')
             return f"学生_{time_str}"
-        else:
-            parts = filename.split('_')
-            if len(parts) > 1:
-                return f"学生_{parts[-1][:8]}"
+        parts = filename.split('_')
+        if len(parts) > 1:
+            return f"学生_{parts[-1][:8]}"
 
-    clean_name = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff]', '_', filename)
-    clean_name = re.sub(r'_+', '_', clean_name).strip('_')
-
-    if clean_name:
-        return clean_name[:20]
-    else:
-        return "Student_Unknown"
+    clean = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff]', '_', filename)
+    clean = re.sub(r'_+', '_', clean).strip('_')
+    return clean[:20] if clean else "Student_Unknown"
 
 def extract_student_answers(image_path, total_questions):
     """
-    演示版：随机生成学生答案，可替换为 OMR 识别
+    演示版：随机生成学生答案，后期可替换为真正的 OMR 逻辑
     """
     choices = ['A', 'B', 'C', 'D']
-    print(f"📝 生成 {total_questions} 题的学生答案 (示例随机)")
-    answers = []
-    for _ in range(total_questions):
-        answers.append(random.choice(choices))
-    return answers
+    print(f"📝 生成 {total_questions} 题的学生答案（示例随机）")
+    return [random.choice(choices) for _ in range(total_questions)]
