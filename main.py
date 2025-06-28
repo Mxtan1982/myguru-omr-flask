@@ -1,12 +1,13 @@
-from flask import Flask, request, jsonify, render_template, send_file
-from flask_cors import CORS
 import os
+import tempfile
 import pandas as pd
+from flask import Flask, request, jsonify, send_file, render_template
+from flask_cors import CORS
 from datetime import datetime
 from werkzeug.utils import secure_filename
+
 from utils import extract_student_name, extract_student_answers
 from skema_parser import extract_skema
-import tempfile
 
 app = Flask(__name__)
 CORS(app)
@@ -16,7 +17,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 results_cache = []
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg', 'png'}
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -28,7 +28,7 @@ def index():
 def grade():
     skema_file = request.files.get("skema")
     student_file = request.files.get("student")
-    school = request.form.get("school", "SJKC").strip()
+    school = request.form.get("school", "SJKC")
 
     if not skema_file or not student_file:
         return jsonify({"error": "缺少 skema 或 student 文件"}), 400
@@ -45,34 +45,23 @@ def grade():
         student_path = student_temp.name
 
     skema_answers = extract_skema(skema_path)
-    print("✅ Skema:", skema_answers)
-
     total_questions = len(skema_answers)
     if total_questions == 0:
-        return jsonify({"error": "Skema 读取失败，请检查 Word/PDF 是否有内容"}), 400
+        return jsonify({"error": "Skema 读取失败"}), 400
 
     student_answers = extract_student_answers(student_path, total_questions)
-    print("✅ Student:", student_answers)
-
-    correct = []
-    incorrect = []
-    for i, (a, b) in enumerate(zip(skema_answers, student_answers)):
-        if a == b:
-            correct.append(i + 1)
-        else:
-            incorrect.append(i + 1)
-
-    score = len(correct)
     student_name = extract_student_name(student_path, school)
+
+    correct = [i + 1 for i, (a, b) in enumerate(zip(skema_answers, student_answers)) if a == b]
+    incorrect = [i + 1 for i in range(total_questions) if i + 1 not in correct]
 
     result = {
         "name": student_name,
-        "score": score,
+        "score": len(correct),
         "total": total_questions,
         "correct": correct,
         "incorrect": incorrect
     }
-
     results_cache.append(result)
     return jsonify(result)
 
@@ -84,11 +73,10 @@ def export_excel():
     df = pd.DataFrame(results_cache)
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = f"/tmp/成绩表_{now}.xlsx"
-    try:
-        df.to_excel(file_path, index=False, engine="openpyxl")
-    except Exception as e:
-        print("❌ Excel Export Error:", str(e))
-        return jsonify({"error": f"导出失败：{str(e)}"}), 500
+    df.to_excel(file_path, index=False)
+
+    if not os.path.exists(file_path):
+        return jsonify({"error": "生成失败，请检查路径"}), 500
 
     return send_file(file_path, as_attachment=True)
 
