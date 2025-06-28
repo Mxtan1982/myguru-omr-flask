@@ -1,19 +1,16 @@
-import os
-import tempfile
-import pandas as pd
-from flask import Flask, request, jsonify, send_file, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
+import os
+import pandas as pd
 from datetime import datetime
 from werkzeug.utils import secure_filename
-
 from utils import extract_student_name, extract_student_answers
 from skema_parser import extract_skema
+import tempfile
 
 app = Flask(__name__)
 CORS(app)
 
-UPLOAD_FOLDER = "/tmp"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 results_cache = []
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg', 'png'}
@@ -62,6 +59,7 @@ def grade():
         "correct": correct,
         "incorrect": incorrect
     }
+
     results_cache.append(result)
     return jsonify(result)
 
@@ -76,7 +74,7 @@ def export_excel():
     df.to_excel(file_path, index=False)
 
     if not os.path.exists(file_path):
-        return jsonify({"error": "生成失败，请检查路径"}), 500
+        return jsonify({"error": "生成失败"}), 500
 
     return send_file(file_path, as_attachment=True)
 
