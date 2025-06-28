@@ -11,9 +11,12 @@ import tempfile
 app = Flask(__name__)
 CORS(app)
 
+UPLOAD_FOLDER = "/tmp"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 results_cache = []
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg', 'png'}
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
