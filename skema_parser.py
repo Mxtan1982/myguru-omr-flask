@@ -11,22 +11,33 @@ def parse_answers_from_text(text):
     return [ans for _, ans in sorted_matches]
 
 def extract_from_docx(path):
-    doc = Document(path)
-    text = "\n".join([p.text for p in doc.paragraphs])
-    return parse_answers_from_text(text)
+    try:
+        doc = Document(path)
+        text = "\n".join([p.text for p in doc.paragraphs])
+        return parse_answers_from_text(text)
+    except Exception as e:
+        print(f"❌ 读取 DOCX 错误: {e}")
+        return []
 
 def extract_from_pdf(path):
-    text = ""
-    with fitz.open(path) as doc:
-        for page in doc:
-            text += page.get_text()
-    return parse_answers_from_text(text)
+    try:
+        text = ""
+        with fitz.open(path) as doc:
+            for page in doc:
+                text += page.get_text()
+        return parse_answers_from_text(text)
+    except Exception as e:
+        print(f"❌ 读取 PDF 错误: {e}")
+        return []
 
 def extract_skema(path):
-    if path.lower().endswith(".pdf"):
+    ext = path.lower()
+    if ext.endswith(".pdf"):
         return extract_from_pdf(path)
-    elif path.lower().endswith(".docx"):
+    elif ext.endswith(".docx"):
         return extract_from_docx(path)
+    elif ext.endswith((".jpg", ".jpeg", ".png")):
+        print("⚠️ 图片格式暂未集成 OCR，返回 40 题示例答案")
+        return [random.choice(['A', 'B', 'C', 'D']) for _ in range(40)]
     else:
-        choices = ['A', 'B', 'C', 'D']
-        return [random.choice(choices) for _ in range(40)]
+        raise ValueError(f"不支持的格式：{os.path.basename(path)}")
