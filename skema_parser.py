@@ -1,61 +1,68 @@
 import re
+import os
+import random
 from docx import Document
 import fitz  # PyMuPDF
-import os
 
 def parse_answers_from_text(text):
     """
-    提取 '1. A'、'2) B' 等格式的标准答案
-    返回有序答案列表 ['A', 'B', 'C', ...]
+    解析类似 '1. A', '2) B' 的格式
+    返回按顺序排好的答案列表
     """
     pattern = r"\b(\d+)[\.\)]\s*([ABCD])"
-    matches = re.findall(pattern, text)
+    matches = re.findall(pattern, text, re.IGNORECASE)
+    # 排序题号，防止乱序
     sorted_matches = sorted(matches, key=lambda x: int(x[0]))
-    answers = [ans for _, ans in sorted_matches]
+    answers = [ans.upper() for _, ans in sorted_matches]
+    print(f"📋 提取到 {len(answers)} 题答案：{answers}")
     return answers
 
 def extract_from_docx(path):
     """
-    从 DOCX 文件中提取文本并解析为答案
+    从 DOCX 提取文本并解析
     """
     try:
         doc = Document(path)
         full_text = "\n".join([para.text for para in doc.paragraphs])
+        print("✅ 读取 DOCX 成功")
         return parse_answers_from_text(full_text)
     except Exception as e:
-        print("❌ 读取 DOCX 错误:", e)
+        print(f"❌ 读取 DOCX 错误: {e}")
         return []
 
 def extract_from_pdf(path):
     """
-    从 PDF 文件中提取文本并解析为答案
+    从 PDF 提取文本并解析
     """
     try:
         text = ""
-        with fitz.open(path) as doc:
-            for page in doc:
-                text += page.get_text()
+        pdf_doc = fitz.open(path)
+        for page in pdf_doc:
+            text += page.get_text()
+        pdf_doc.close()
+        print("✅ 读取 PDF 成功")
         return parse_answers_from_text(text)
     except Exception as e:
-        print("❌ 读取 PDF 错误:", e)
+        print(f"❌ 读取 PDF 错误: {e}")
         return []
 
 def extract_skema(path):
     """
-    根据扩展名选择 DOCX 或 PDF 提取方式，或为图片文件返回示例答案
+    根据文件扩展名自动选择提取方式：
+    - PDF: 用 PyMuPDF
+    - DOCX: 用 python-docx
+    - 图片: 生成随机示例
     """
-    file_ext = path.lower()
-    
-    if file_ext.endswith(".pdf"):
+    _, ext = os.path.splitext(path.lower())
+
+    if ext == ".pdf":
         return extract_from_pdf(path)
-    elif file_ext.endswith(".docx"):
+    elif ext == ".docx":
         return extract_from_docx(path)
-    elif file_ext.endswith((".jpg", ".jpeg", ".png")):
-        # 为图片文件返回示例答案（实际应用中需要OCR处理）
-        print("⚠️ 图片格式暂不支持OCR，返回40题示例答案")
-        # 生成40题的示例答案
-        import random
+    elif ext in [".jpg", ".jpeg", ".png"]:
+        print("⚠️ 图片暂未集成 OCR，返回 40 题示例答案")
         choices = ['A', 'B', 'C', 'D']
-        return [random.choice(choices) for _ in range(40)]
+        answers = [random.choice(choices) for _ in range(40)]
+        return answers
     else:
-        raise ValueError(f"不支持的格式：{os.path.basename(path)}。请上传 PDF 或 DOCX 格式的标准答案")
+        raise ValueError(f"❌ 不支持的文件格式：{ext}，请上传 PDF 或 DOCX")
