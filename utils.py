@@ -22,7 +22,7 @@ TEMPLATES = {
 def extract_student_name(image_path, template_name=None):
     text = ""
 
-    if template_name in TEMPLATES:
+    if template_name and template_name in TEMPLATES:
         try:
             img = cv2.imread(image_path)
             coords = TEMPLATES[template_name]
@@ -31,11 +31,15 @@ def extract_student_name(image_path, template_name=None):
 
             gray = cv2.cvtColor(name_region, cv2.COLOR_BGR2GRAY)
             text = pytesseract.image_to_string(gray, lang="eng").strip()
+            if text:
+                print(f"✅ OCR 识别到名字：{text}")
         except Exception as e:
-            print(f"OCR failed: {e}")
+            print(f"⚠️ OCR 出错：{e}")
 
+    # 必须 fallback，否则 Render 会 500
     if not text or len(text) < 2:
         text = fallback_name_from_filename(image_path)
+        print(f"✅ 使用文件名推测：{text}")
 
     return text
 
@@ -56,6 +60,6 @@ def fallback_name_from_filename(image_path):
     return clean_name[:20] if clean_name else "Student_Unknown"
 
 def extract_student_answers(image_path, total_questions):
-    print(f"📝 生成 {total_questions} 题的学生答案 (示例随机)")
+    print(f"📝 生成 {total_questions} 题的学生答案（示例随机）")
     choices = ['A', 'B', 'C', 'D']
     return [random.choice(choices) for _ in range(total_questions)]
