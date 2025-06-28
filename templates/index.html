@@ -113,7 +113,7 @@
       }
 
       if (studentFiles.length > credit) {
-        alert("您的广告观看次数不足，请重新观看广告。");
+        alert("广告次数不足，请重新模拟观看广告！");
         return;
       }
 
@@ -126,22 +126,30 @@
 
         const res = await fetch("/grade", { method: "POST", body: formData });
         const data = await res.json();
+        if (data.error) {
+          alert(`❌ 批改失败：${data.error}`);
+          continue;
+        }
         allResults.push(data);
         credit--;
       }
 
-      document.getElementById("result").innerText = allResults.map((r) =>
-        `👤 学生：${r.name || "Unknown"}
+      if (allResults.length === 0) {
+        document.getElementById("result").innerText = "⚠️ 没有可显示的成绩";
+      } else {
+        document.getElementById("result").innerText = allResults.map((r) =>
+          `👤 学生：${r.name || "Unknown"}
 🎯 得分：${r.score}/${r.total} = ${(r.score / r.total * 100).toFixed(1)}%
 ✅ 对题号：${r.correct.join(", ")}
 ❌ 错题号：${r.incorrect.join(", ")}`
-      ).join("\n\n");
+        ).join("\n\n");
+      }
 
       document.getElementById("log").innerText = `剩余可批改学生数：${credit}`;
     }
 
     function exportExcel() {
-      alert("📥 系统将打包并导出成绩表...");
+      alert("📥 正在打包成绩表...");
       window.location.href = "/export-excel";
     }
   </script>
