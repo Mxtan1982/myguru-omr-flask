@@ -11,12 +11,10 @@ import tempfile
 app = Flask(__name__)
 CORS(app)
 
-# 放在 /tmp 确保在 Render、Replit 可写
 UPLOAD_FOLDER = "/tmp"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 results_cache = []
 
-# 允许上传的文件类型
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg', 'png'}
 
 def allowed_file(filename):
@@ -30,7 +28,7 @@ def index():
 def grade():
     skema_file = request.files.get("skema")
     student_file = request.files.get("student")
-    school = request.form.get("school", "").strip()  # 新增 strip 防止空格
+    school = request.form.get("school", "SJKC").strip()
 
     if not skema_file or not student_file:
         return jsonify({"error": "缺少 skema 或 student 文件"}), 400
@@ -38,24 +36,23 @@ def grade():
     if not allowed_file(skema_file.filename) or not allowed_file(student_file.filename):
         return jsonify({"error": "上传的文件类型不被允许"}), 400
 
-    # 保存 skema 临时文件
     with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(skema_file.filename)) as skema_temp:
         skema_file.save(skema_temp.name)
         skema_path = skema_temp.name
 
-    # 保存 student 临时文件
     with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(student_file.filename)) as student_temp:
         student_file.save(student_temp.name)
         student_path = student_temp.name
 
-    # 读取 skema
     skema_answers = extract_skema(skema_path)
+    print("✅ Skema:", skema_answers)
+
     total_questions = len(skema_answers)
     if total_questions == 0:
-        return jsonify({"error": "Skema 读取失败，请检查 Word/PDF 是否有答案"}), 400
+        return jsonify({"error": "Skema 读取失败，请检查 Word/PDF 是否有内容"}), 400
 
-    # 读取学生答案（示例：随机答案或 OMR）
     student_answers = extract_student_answers(student_path, total_questions)
+    print("✅ Student:", student_answers)
 
     correct = []
     incorrect = []
@@ -90,6 +87,7 @@ def export_excel():
     try:
         df.to_excel(file_path, index=False, engine="openpyxl")
     except Exception as e:
+        print("❌ Excel Export Error:", str(e))
         return jsonify({"error": f"导出失败：{str(e)}"}), 500
 
     return send_file(file_path, as_attachment=True)
