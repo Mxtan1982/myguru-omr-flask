@@ -9,5 +9,6 @@ numpy
 gunicorn
 openpyxl
 easyocr
-opencv-python-headless
 torch>=2.0.0
+opencv-python-headless
+torch
