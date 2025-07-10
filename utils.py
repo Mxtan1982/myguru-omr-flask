@@ -1,10 +1,10 @@
-import pytesseract
+import easyocr
 import cv2
 import os
 import re
 import random
 
-# 多模板区域配置
+# 👉 需要的版式模板（可按需要自己调）
 TEMPLATES = {
     "SJKC": {"x": 50, "y": 50, "w": 400, "h": 100},
     "SK": {"x": 70, "y": 50, "w": 400, "h": 90},
@@ -20,10 +20,12 @@ TEMPLATES = {
     "VOKASIONAL": {"x": 95, "y": 50, "w": 450, "h": 110}
 }
 
+# ✅ 初始化 EasyOCR Reader
+reader = easyocr.Reader(['en', 'ch_sim'], gpu=False)
+
 def extract_student_name(image_path, template_name=None):
     """
-    根据模板区域使用 pytesseract 提取学生名字
-    template_name: 学校或考试代号，如 SJKC, SMK, UPSR 等
+    使用 EasyOCR 自动读取学生名字，如果失败则 fallback
     """
     text = ""
 
@@ -32,28 +34,29 @@ def extract_student_name(image_path, template_name=None):
             img = cv2.imread(image_path)
             coords = TEMPLATES[template_name]
             x, y, w, h = coords["x"], coords["y"], coords["w"], coords["h"]
-
-            # 裁剪名字区域
             name_region = img[y:y + h, x:x + w]
 
-            # 灰度化并 OCR
+            # 灰度化更好识别
             gray = cv2.cvtColor(name_region, cv2.COLOR_BGR2GRAY)
-            text = pytesseract.image_to_string(gray, lang="eng").strip()
 
-            if text:
-                print(f"✅ OCR 识别到名字：{text}")
+            # EasyOCR 识别
+            results = reader.readtext(gray, detail=0)
+            text = "".join(results).strip()
+            print(f"✅ EasyOCR 识别到名字：{text}")
+
         except Exception as e:
-            print(f"⚠️ OCR 出错：{e}")
+            print(f"⚠️ EasyOCR 处理出错：{e}")
 
+    # fallback
     if not text or len(text) < 2:
         text = fallback_name_from_filename(image_path)
-        print(f"✅ 使用文件名推测：{text}")
+        print(f"✅ fallback 文件名推测：{text}")
 
     return text
 
 def fallback_name_from_filename(image_path):
     """
-    当 OCR 无法识别时，使用文件名生成一个合适的学生名字
+    如果 OCR 失败，就用文件名推测
     """
     filename = os.path.splitext(os.path.basename(image_path))[0]
 
@@ -72,8 +75,8 @@ def fallback_name_from_filename(image_path):
 
 def extract_student_answers(image_path, total_questions):
     """
-    生成随机答案（示例）
+    OMR 假实现 - 返回随机答案（示例）
     """
-    print(f"📝 生成 {total_questions} 题的学生答案（示例随机）")
+    print(f"📝 EasyOCR 生成 {total_questions} 题的学生答案（随机示例）")
     choices = ['A', 'B', 'C', 'D']
     return [random.choice(choices) for _ in range(total_questions)]
