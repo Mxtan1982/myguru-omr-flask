@@ -1,0 +1,57 @@
+[
+  {
+    "school": "STPM",
+    "exam": "STPM",
+    "name_area": [50, 100, 500, 80]
+  },
+  {
+    "school": "SMK",
+    "exam": "SPM",
+    "name_area": [60, 110, 500, 80]
+  },
+  {
+    "school": "SMK",
+    "exam": "UASA",
+    "name_area": [70, 120, 500, 80]
+  },
+  {
+    "school": "SK",
+    "exam": "UPSR",
+    "name_area": [80, 130, 500, 80]
+  },
+  {
+    "school": "SMK",
+    "exam": "PT3",
+    "name_area": [90, 140, 500, 80]
+  },
+  {
+    "school": "SK",
+    "exam": "PBD",
+    "name_area": [100, 150, 500, 80]
+  },
+  {
+    "school": "SK",
+    "exam": "SK",
+    "name_area": [110, 160, 500, 80]
+  },
+  {
+    "school": "SM",
+    "exam": "SM",
+    "name_area": [120, 170, 500, 80]
+  },
+  {
+    "school": "SJKC",
+    "exam": "SJKC",
+    "name_area": [130, 180, 500, 80]
+  },
+  {
+    "school": "SJKT",
+    "exam": "SJKT",
+    "name_area": [140, 190, 500, 80]
+  },
+  {
+    "school": "SMK",
+    "exam": "SMK",
+    "name_area": [150, 200, 500, 80]
+  }
+]
