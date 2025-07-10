@@ -22,13 +22,13 @@ def allowed_file(filename):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return jsonify({"message": "✅ OMR Marker is running!"})
 
 @app.route("/grade", methods=["POST"])
 def grade():
     skema_file = request.files.get("skema")
     student_file = request.files.get("student")
-    school = request.form.get("school", "SJKC")
+    school = request.form.get("school", None)  # 学校参数可选
 
     if not skema_file or not student_file:
         return jsonify({"error": "缺少 skema 或 student 文件"}), 400
@@ -44,14 +44,19 @@ def grade():
         student_file.save(student_temp.name)
         student_path = student_temp.name
 
+    # 提取 skema 标准答案
     skema_answers = extract_skema(skema_path)
     total_questions = len(skema_answers)
     if total_questions == 0:
         return jsonify({"error": "Skema 读取失败"}), 400
 
+    # 生成学生答案
     student_answers = extract_student_answers(student_path, total_questions)
-    student_name = extract_student_name(student_path, school)
 
+    # 调用 OCR 名字识别（可带模板名）
+    student_name = extract_student_name(student_path, template_name=school)
+
+    # 比对成绩
     correct = [i + 1 for i, (a, b) in enumerate(zip(skema_answers, student_answers)) if a == b]
     incorrect = [i + 1 for i in range(total_questions) if i + 1 not in correct]
 
