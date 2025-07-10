@@ -8,3 +8,6 @@ opencv-python
 numpy
 gunicorn
 openpyxl
+easyocr
+opencv-python-headless
+torch
