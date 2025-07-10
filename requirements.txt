@@ -10,4 +10,4 @@ gunicorn
 openpyxl
 easyocr
 opencv-python-headless
-torch
+torch>=2.0.0
